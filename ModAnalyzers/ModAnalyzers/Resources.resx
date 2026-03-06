@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <data name="STS001Title" xml:space="preserve">
+        <value>Model missing localization</value>
+    </data>
+    <data name="STS001Description" xml:space="preserve">
+        <value>Models must have defined localization.</value>
+    </data>
+    <data name="STS001MessageFormat" xml:space="preserve">
+        <value>Localization {0} not found for type '{1}'</value>
+    </data>
+    <data name="STS001CodeFixTitle" xml:space="preserve">
+        <value>Generate localization that must be copied to '{0}'</value>
+    </data>
+    <data name="STS002Title" xml:space="preserve">
+        <value>Missing localization files</value>
+    </data>
+    <data name="STS002Description" xml:space="preserve">
+        <value>Localization files must be added as additional files for analysis</value>
+    </data>
+</root>
