@@ -1,4 +1,4 @@
-using Basis.Abstracts;
+using BaseLib.Abstracts;
 
 namespace Mod.Sample;
 
