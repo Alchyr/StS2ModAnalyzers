@@ -6,3 +6,4 @@ Properties/
 publish/
 Publish/
 obj/
+*.user
