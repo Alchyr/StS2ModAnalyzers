@@ -119,7 +119,8 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     {
         if (context.Symbol is not INamedTypeSymbol namedTypeSymbol) return;
         if (namedTypeSymbol.IsAbstract || namedTypeSymbol.IsStatic) return;
-        if (!LoadLocalization(context, out var localizationKeys)) return;
+
+        LoadLocalization(context, out var localizationKeys);
         
         Dictionary<string, string> missingKeys = [];
         
@@ -161,7 +162,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private bool LoadLocalization(SymbolAnalysisContext context, out HashSet<string> localizationKeys)
+    private void LoadLocalization(SymbolAnalysisContext context, out HashSet<string> localizationKeys)
     {
         var additionalFiles = context.Options.AdditionalFiles;
         localizationKeys = [];
@@ -191,12 +192,10 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (jsonCount > 0) return true;
+        if (jsonCount > 0) return;
         
         var diagnostic = Diagnostic.Create(NoLoc, null);
         context.ReportDiagnostic(diagnostic);
-        return false;
-
     }
 
     private static string JoinKeys<T, U>(IDictionary<T, U> dict)
