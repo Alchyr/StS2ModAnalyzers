@@ -110,7 +110,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         // You must call this method to enable the Concurrent Execution.
-        //context.EnableConcurrentExecution();
+        context.EnableConcurrentExecution();
 
         context.RegisterSymbolAction(CheckSymbol, SymbolKind.NamedType);
     }
