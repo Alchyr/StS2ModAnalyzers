@@ -19,6 +19,8 @@
         <Authors>Alchyr</Authors>
         <Description>Analyzers to help with the creation of Slay the Spire 2 mods.</Description>
         <PackageTags>c#</PackageTags>
+        
+        <RepositoryUrl>https://github.com/Alchyr/StS2ModAnalyzers/tree/master/ModAnalyzers/ModAnalyzers</RepositoryUrl>
 
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <!-- Prevent the analyzer from being added as a lib reference -->
