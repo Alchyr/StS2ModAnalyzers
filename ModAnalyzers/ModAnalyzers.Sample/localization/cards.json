@@ -1,6 +1,4 @@
 {
-  "ODDMELT-STRIKE_ODDMELT.title": "Strike",
-  "ODDMELT-STRIKE_ODDMELT.description": "Deal {Damage:diff()} damage.",
-  "ODDMELT-DEFEND_ODDMELT.title": "Defend",
-  "ODDMELT-DEFEND_ODDMELT.description": "Gain {Block:diff()} [gold]Block[/gold]."
+  "WRONG_TYPE_CARD.title": "WrongTypeCard",
+  "WRONG_TYPE_CARD.description": ""
 }

@@ -15,7 +15,7 @@ internal static class Extensions
         if (fullName.Length > 0) fullName += ".";
         return fullName + symbol.Name;
     }
-
+    
     public static bool ImplementsInterfaceOrBaseClass(this INamedTypeSymbol typeSymbol, Type typeToCheck)
     {
         return typeSymbol.ImplementsInterfaceOrBaseClass(typeToCheck.Name);

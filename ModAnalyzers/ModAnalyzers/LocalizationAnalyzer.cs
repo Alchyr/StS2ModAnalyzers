@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -11,23 +12,30 @@ namespace ModAnalyzers;
 
 //TODO - check localizations by language (separate keys into a map by language, report all languages missing keys)
 //Probably keys map to a list of languages, and then compare that to list of all languages that exist
+//TODO - Check localization for base classes instead, add prefix if implement ICustomModel
+
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class LocalizationAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "STS001";    
     public const string NoLocId = "STS002";
+    public const string CustomModelRuleId = "STS003";
+
+    private const string BaseLibAbstracts = "BaseLib.Abstracts.Custom";
+    private const string CustomModelInterface = "BaseLib.Abstracts.ICustomModel";
+    
 
     //Required localization data
     private static readonly Dictionary<string, RequiredLocalization> LocData = new()
     {
         {
-            "BaseLib.Abstracts.CustomCardModel", //modeltype
+            "MegaCrit.Sts2.Core.Models.CardModel", //modeltype
             new RequiredLocalization("cards") //file
                 .Add("title", "CLASSNAME")  //required entries
                 .Add("description")
         },
         {
-            "BaseLib.Abstracts.CustomCharacterModel",
+            "MegaCrit.Sts2.Core.Models.CharacterModel",
             new RequiredLocalization("characters")
                 .Add("title", "The CLASSNAME")
                 .Add("titleObject", "The CLASSNAME")
@@ -41,24 +49,24 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 .Add("aromaPrinciple", "Lore")
                 .Add("cardsModifierTitle", "__ Cards")
                 .Add("cardsModifierDescription", "__ cards will now appear in rewards and shops.")
-                .Add("banter.alive.endTurnPing", "Some variation of Hurry Up")
+                .Add("banter.alive.endTurnPing", "Co-op hurry up end turn ping message")
                 .Add("banter.dead.endTurnPing", "...")
         },
         {
-            "BaseLib.Abstracts.CustomPotionModel",
+            "MegaCrit.Sts2.Core.Models.PotionModel",
             new RequiredLocalization("potions")
                 .Add("title", "CLASSNAME")
                 .Add("description")
         },
         {
-            "BaseLib.Abstracts.CustomPowerModel",
+            "MegaCrit.Sts2.Core.Models.PowerModel",
             new RequiredLocalization("powers")
                 .Add("title", "CLASSNAME")
                 .Add("description")
                 .Add("smartDescription")
         },
         {
-            "BaseLib.Abstracts.CustomRelicModel",
+            "MegaCrit.Sts2.Core.Models.RelicModel",
             new RequiredLocalization("relics")
                 .Add("title", "CLASSNAME")
                 .Add("description")
@@ -82,9 +90,14 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         Resources.ResourceManager, typeof(Resources));
     private static readonly LocalizableString NoLocTitle = new LocalizableResourceString(nameof(Resources.STS002Title),
         Resources.ResourceManager, typeof(Resources));
+    private static readonly LocalizableString CustomModelTitle = new LocalizableResourceString(nameof(Resources.STS003Title),
+        Resources.ResourceManager, typeof(Resources));
 
     private static readonly LocalizableString MessageFormat =
         new LocalizableResourceString(nameof(Resources.STS001MessageFormat), Resources.ResourceManager,
+            typeof(Resources));
+    private static readonly LocalizableString CustomModelFormat =
+        new LocalizableResourceString(nameof(Resources.STS003MessageFormat), Resources.ResourceManager,
             typeof(Resources));
 
     private static readonly LocalizableString Description =
@@ -93,6 +106,9 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString NoLocDescription =
         new LocalizableResourceString(nameof(Resources.STS002Description), Resources.ResourceManager,
             typeof(Resources));
+    private static readonly LocalizableString CustomModelDescription =
+        new LocalizableResourceString(nameof(Resources.STS003Description), Resources.ResourceManager,
+            typeof(Resources));
 
     private const string Category = "Localization";
 
@@ -100,9 +116,11 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Error, isEnabledByDefault: true, description: Description);
     private static readonly DiagnosticDescriptor NoLoc = new(NoLocId, NoLocTitle, NoLocDescription, Category,
         DiagnosticSeverity.Warning, isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor CustomModelRule = new(CustomModelRuleId, CustomModelTitle, CustomModelFormat, Category,
+        DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CustomModelDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(Rule, NoLoc);
+        ImmutableArray.Create(Rule, NoLoc, CustomModelRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -127,10 +145,22 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         foreach (var entry in LocData)
         {
             if (!namedTypeSymbol.ImplementsInterfaceOrBaseClass(entry.Key)) continue;
+            var isCustomModel = namedTypeSymbol.ImplementsInterfaceOrBaseClass(CustomModelInterface);
 
+            if (!isCustomModel)
+            {
+                var customModelName = entry.Key;
+                var index = customModelName.LastIndexOf('.');
+                customModelName = BaseLibAbstracts + customModelName.Substring(index + 1);
+                var modelTypeDiagnostic = Diagnostic.Create(CustomModelRule,
+                    namedTypeSymbol.Locations[0],
+                    customModelName);
+                context.ReportDiagnostic(modelTypeDiagnostic);
+            }
             
             var fullName = namedTypeSymbol.FullName();
-            var id = namedTypeSymbol.Name.Slugify().AddPrefix(fullName);
+            var id = namedTypeSymbol.Name.Slugify();
+            if (isCustomModel) id = id.AddPrefix(fullName);
             
             foreach (var locEntry in entry.Value.RequiredKeys)
             {
