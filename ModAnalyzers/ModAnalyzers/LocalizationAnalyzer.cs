@@ -12,7 +12,6 @@ namespace ModAnalyzers;
 
 //TODO - check localizations by language (separate keys into a map by language, report all languages missing keys)
 //Probably keys map to a list of languages, and then compare that to list of all languages that exist
-//TODO - Check localization for base classes instead, add prefix if implement ICustomModel
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class LocalizationAnalyzer : DiagnosticAnalyzer
@@ -39,7 +38,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             new RequiredLocalization("characters")
                 .Add("title", "The CLASSNAME")
                 .Add("titleObject", "The CLASSNAME")
-                .Add("description", "Character Selection\nScreen Description")
+                .Add("description", "Character Selection\\nScreen Description")
                 .Add("pronounObject", "him/her/it")
                 .Add("possessiveAdjective", "his/her/its")
                 .Add("pronounPossessive", "his/hers/its")
@@ -71,6 +70,14 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 .Add("title", "CLASSNAME")
                 .Add("description")
                 .Add("flavor")
+        },
+        {
+            "MegaCrit.Sts2.Core.Models.AncientEventModel",
+            new RequiredLocalization("ancients")
+                .Add("title", "CLASSNAME")
+                .Add("epithet")
+                .Add("talk.firstVisitEver.0-0.ancient", "First time greeting.")
+                .Add("talk.ANY.0-0r.ancient", "Reusable generic greeting.")
         }
     };
 
@@ -124,21 +131,60 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
-        // You must call this method to avoid analyzing generated code.
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-
-        // You must call this method to enable the Concurrent Execution.
         context.EnableConcurrentExecution();
+        
+        context.RegisterCompilationStartAction(LoadLocOnce);
+    }
 
+    private HashSet<string>? _currentLocKeys;
+
+    private void LoadLocOnce(CompilationStartAnalysisContext context)
+    {
+        var additionalFiles = context.Options.AdditionalFiles;
+        _currentLocKeys = [];
+        bool receivedJson = false;
+        
+        foreach (var file in additionalFiles)
+        {
+            if (file == null) continue;
+            
+            var path = file.Path;
+            if (!path.EndsWith(".json")) continue;
+            if (!path.Contains("localization")) continue;
+
+            receivedJson = true;
+
+            var jsonText = file.GetText()?.ToString();
+            if (jsonText == null) continue;
+
+            try
+            {
+                var fileKey = Path.GetFileNameWithoutExtension(path);
+                var loc = JsonValue.Parse(jsonText);
+                if (loc is not JsonObject locObj) continue;
+                foreach (var s in locObj.Keys)
+                {
+                    _currentLocKeys.Add($"{fileKey}.{s}");
+                }
+            }
+            catch (Exception) { }
+        }
+        
         context.RegisterSymbolAction(CheckSymbol, SymbolKind.NamedType);
+        context.RegisterCompilationEndAction(endContext =>
+        {
+            if (receivedJson) return;
+            var diagnostic = Diagnostic.Create(NoLoc, null);
+            endContext.ReportDiagnostic(diagnostic);
+        });
     }
 
     private void CheckSymbol(SymbolAnalysisContext context)
     {
         if (context.Symbol is not INamedTypeSymbol namedTypeSymbol) return;
         if (namedTypeSymbol.IsAbstract || namedTypeSymbol.IsStatic) return;
-
-        LoadLocalization(context, out var localizationKeys);
+        if (_currentLocKeys == null) return;
         
         Dictionary<string, string> missingKeys = [];
         
@@ -165,7 +211,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             foreach (var locEntry in entry.Value.RequiredKeys)
             {
                 var key = $"{entry.Value.Filename}.{id}.{locEntry.Key}";
-                if (localizationKeys.Contains(key)) continue;
+                if (_currentLocKeys.Contains(key)) continue;
 
                 var result = locEntry.Value.Replace("CLASSNAME", namedTypeSymbol.Name);
 
@@ -190,42 +236,6 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
 
             return;
         }
-    }
-
-    private void LoadLocalization(SymbolAnalysisContext context, out HashSet<string> localizationKeys)
-    {
-        var additionalFiles = context.Options.AdditionalFiles;
-        localizationKeys = [];
-
-        var jsonCount = 0;
-        
-        foreach (var file in additionalFiles)
-        {
-            if (file == null) continue;
-            
-            var path = file.Path;
-            if (!path.EndsWith(".json")) continue;
-            if (!path.Contains("localization")) continue;
-
-            var jsonText = file.GetText()?.ToString();
-            if (jsonText == null) continue;
-
-            var loc = JsonValue.Parse(jsonText);
-
-            if (loc is not JsonObject locObj) continue;
-
-            ++jsonCount;
-
-            foreach (var s in locObj.Keys)
-            {
-                localizationKeys.Add($"{Path.GetFileNameWithoutExtension(path)}.{s}");
-            }
-        }
-
-        if (jsonCount > 0) return;
-        
-        var diagnostic = Diagnostic.Create(NoLoc, null);
-        context.ReportDiagnostic(diagnostic);
     }
 
     private static string JoinKeys<T, U>(IDictionary<T, U> dict)

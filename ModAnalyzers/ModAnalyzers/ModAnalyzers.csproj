@@ -15,9 +15,10 @@
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>Alchyr.Sts2.ModAnalyzers</PackageId>
-        <PackageVersion>0.0.1</PackageVersion>
+        <PackageVersion>0.0.6</PackageVersion>
         <Authors>Alchyr</Authors>
         <Description>Analyzers to help with the creation of Slay the Spire 2 mods.</Description>
+        <PackageReleaseNotes>Use CompilationStartAction instead of threading</PackageReleaseNotes>
         <PackageTags>c#</PackageTags>
         
         <RepositoryUrl>https://github.com/Alchyr/StS2ModAnalyzers/tree/master/ModAnalyzers/ModAnalyzers</RepositoryUrl>

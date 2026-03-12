@@ -1,6 +1,8 @@
-﻿namespace BaseLib.Abstracts;
+﻿using MegaCrit.Sts2.Core.Models;
 
-public abstract class CustomCardModel
+namespace BaseLib.Abstracts;
+
+public abstract class CustomCardModel : CardModel, ICustomModel
 {
     
 }
