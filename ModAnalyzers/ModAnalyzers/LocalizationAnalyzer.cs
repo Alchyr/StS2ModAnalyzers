@@ -81,6 +81,20 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         }
     };
 
+    /// <summary>
+    /// Method overrides that disable entries for specific models.
+    /// </summary>
+    private static readonly Dictionary<string, KeyValuePair<string, string>[]> OverrideIgnores = new()
+    {
+        {
+            "MegaCrit.Sts2.Core.Models.PowerModel",
+            [
+                new("Title", "title"),
+                new("Description", "description")
+            ]
+        }
+    };
+
     class RequiredLocalization(string filename)
     {
         public readonly string Filename = filename;
@@ -122,7 +136,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(DiagnosticId, Title, MessageFormat, Category,
         DiagnosticSeverity.Error, isEnabledByDefault: true, description: Description);
     private static readonly DiagnosticDescriptor NoLoc = new(NoLocId, NoLocTitle, NoLocDescription, Category,
-        DiagnosticSeverity.Warning, isEnabledByDefault: true);
+        DiagnosticSeverity.Warning, isEnabledByDefault: true, customTags: "CompilationEnd");
     private static readonly DiagnosticDescriptor CustomModelRule = new(CustomModelRuleId, CustomModelTitle, CustomModelFormat, Category,
         DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CustomModelDescription);
 
@@ -193,6 +207,18 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             if (!namedTypeSymbol.ImplementsInterfaceOrBaseClass(entry.Key)) continue;
             var isCustomModel = namedTypeSymbol.ImplementsInterfaceOrBaseClass(CustomModelInterface);
 
+            List<string> ignoreKeys = [];
+            if (OverrideIgnores.TryGetValue(entry.Key, out var overrideIgnores))
+            {
+                foreach (var overrideIgnore in overrideIgnores)
+                {
+                    if (namedTypeSymbol.OverridesMethodOrProperty(entry.Key, overrideIgnore.Key))
+                    {
+                        ignoreKeys.Add(overrideIgnore.Value);
+                    }
+                }
+            }
+
             if (!isCustomModel)
             {
                 var customModelName = entry.Key;
@@ -210,6 +236,8 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             
             foreach (var locEntry in entry.Value.RequiredKeys)
             {
+                if (ignoreKeys.Contains(locEntry.Key)) continue;
+                
                 var key = $"{entry.Value.Filename}.{id}.{locEntry.Key}";
                 if (_currentLocKeys.Contains(key)) continue;
 

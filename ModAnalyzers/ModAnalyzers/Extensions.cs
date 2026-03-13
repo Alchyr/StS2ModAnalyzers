@@ -46,6 +46,26 @@ internal static class Extensions
         return false;
     }
 
+    /// <summary>
+    /// returns true if typeSymbol has an override for property/method baseName defined in baseType
+    /// </summary>
+    /// <param name="typeSymbol"></param>
+    /// <param name="baseTypeName"></param>
+    /// <param name="baseName"></param>
+    /// <returns></returns>
+    public static bool OverridesMethodOrProperty(this INamedTypeSymbol typeSymbol, string baseTypeName, string baseName)
+    {
+        if (typeSymbol.FullName() == baseTypeName) return false;
+        
+        foreach (var symbol in typeSymbol.GetMembers())
+        {
+            if (symbol.IsOverride && symbol.Name == baseName) return true;
+        }
+        
+        var baseType = typeSymbol.BaseType;
+        return baseType != null && baseType.OverridesMethodOrProperty(baseTypeName, baseName);
+    }
+
     private static readonly Regex CamelCaseRegex =
         new(pattern: "([A-Za-z0-9]|\\G(?!^))([A-Z])",
             options: RegexOptions.Compiled);
