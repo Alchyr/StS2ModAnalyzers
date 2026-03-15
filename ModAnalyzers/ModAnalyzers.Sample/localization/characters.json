@@ -1,0 +1,15 @@
+{
+  "MODANALYZERS-GUY.aromaPrinciple": "Lore",
+  "MODANALYZERS-GUY.banter.alive.endTurnPing": "Co-op hurry up end turn ping message",
+  "MODANALYZERS-GUY.banter.dead.endTurnPing": "...",
+  "MODANALYZERS-GUY.cardsModifierDescription": "__ cards will now appear in rewards and shops.",
+  "MODANALYZERS-GUY.cardsModifierTitle": "__ Cards",
+  "MODANALYZERS-GUY.description": "Character Selection\nScreen Description",
+  "MODANALYZERS-GUY.eventDeathPrevention": "Co-op survival line",
+  "MODANALYZERS-GUY.goldMonologue": "Line spoken when obtaining a large amount of gold",
+  "MODANALYZERS-GUY.possessiveAdjective": "his/her/its",
+  "MODANALYZERS-GUY.pronounObject": "him/her/it",
+  "MODANALYZERS-GUY.pronounPossessive": "his/hers/its",
+  "MODANALYZERS-GUY.pronounSubject": "he/she/it",
+  "MODANALYZERS-GUY.title": "The Guy"
+}

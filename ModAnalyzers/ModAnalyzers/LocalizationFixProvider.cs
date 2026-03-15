@@ -91,7 +91,7 @@ public class LocalizationFixProvider : CodeFixProvider
         StringBuilder commentBuilder = new();
         
         var first = true;
-        foreach (var entry in missingKeys)
+        foreach (var entry in missingKeys.ToImmutableSortedDictionary())
         {
             if (first) first = false;
             else commentBuilder.AppendLine(",");

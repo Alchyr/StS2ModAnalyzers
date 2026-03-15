@@ -25,59 +25,65 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     
 
     //Required localization data
-    private static readonly Dictionary<string, RequiredLocalization> LocData = new()
+    private static readonly Dictionary<string, RequiredLocalization[]> LocData = new()
     {
         {
             "MegaCrit.Sts2.Core.Models.CardModel", //modeltype
-            new RequiredLocalization("cards") //file
-                .Add("title", "CLASSNAME")  //required entries
-                .Add("description")
+            [new RequiredLocalization("cards") //file
+                .Add("CLASSID.title", "CLASSNAME")  //required entries
+                .Add("CLASSID.description")
+            ]
         },
         {
             "MegaCrit.Sts2.Core.Models.CharacterModel",
-            new RequiredLocalization("characters")
-                .Add("title", "The CLASSNAME")
-                .Add("titleObject", "The CLASSNAME")
-                .Add("description", "Character Selection\\nScreen Description")
-                .Add("pronounObject", "him/her/it")
-                .Add("possessiveAdjective", "his/her/its")
-                .Add("pronounPossessive", "his/hers/its")
-                .Add("pronounSubject", "he/she/it")
-                .Add("goldMonologue", "Line spoken when obtaining a large amount of gold")
-                .Add("eventDeathPrevention", "Co-op survival line")
-                .Add("aromaPrinciple", "Lore")
-                .Add("cardsModifierTitle", "__ Cards")
-                .Add("cardsModifierDescription", "__ cards will now appear in rewards and shops.")
-                .Add("banter.alive.endTurnPing", "Co-op hurry up end turn ping message")
-                .Add("banter.dead.endTurnPing", "...")
+            [new RequiredLocalization("characters")
+                .Add("CLASSID.title", "The CLASSNAME")
+                .Add("CLASSID.titleObject", "The CLASSNAME")
+                .Add("CLASSID.description", "Character Selection\\nScreen Description")
+                .Add("CLASSID.pronounObject", "him/her/it")
+                .Add("CLASSID.possessiveAdjective", "his/her/its")
+                .Add("CLASSID.pronounPossessive", "his/hers/its")
+                .Add("CLASSID.pronounSubject", "he/she/it")
+                .Add("CLASSID.goldMonologue", "Line spoken when obtaining a large amount of gold")
+                .Add("CLASSID.eventDeathPrevention", "Co-op survival line")
+                .Add("CLASSID.aromaPrinciple", "Lore")
+                .Add("CLASSID.cardsModifierTitle", "__ Cards")
+                .Add("CLASSID.cardsModifierDescription", "__ cards will now appear in rewards and shops.")
+                .Add("CLASSID.banter.alive.endTurnPing", "Co-op hurry up end turn ping message")
+                .Add("CLASSID.banter.dead.endTurnPing", "..."),
+            new RequiredLocalization("ancients")
+                .Add("THE_ARCHITECT.talk.CLASSID.0-0r.char", "I am angry at the architect")
+                .Add("THE_ARCHITECT.talk.CLASSID.0-0r.next", "Continue")
+                .Add("THE_ARCHITECT.talk.CLASSID.0-0r.architect", "You die")
+                .Add("THE_ARCHITECT.talk.CLASSID.0-attack", "BOTH")]
         },
         {
             "MegaCrit.Sts2.Core.Models.PotionModel",
-            new RequiredLocalization("potions")
-                .Add("title", "CLASSNAME")
-                .Add("description")
+            [new RequiredLocalization("potions")
+                .Add("CLASSID.title", "CLASSNAME")
+                .Add("CLASSID.description")]
         },
         {
             "MegaCrit.Sts2.Core.Models.PowerModel",
-            new RequiredLocalization("powers")
-                .Add("title", "CLASSNAME")
-                .Add("description")
-                .Add("smartDescription")
+            [new RequiredLocalization("powers")
+                .Add("CLASSID.title", "CLASSNAME")
+                .Add("CLASSID.description")
+                .Add("CLASSID.smartDescription")]
         },
         {
             "MegaCrit.Sts2.Core.Models.RelicModel",
-            new RequiredLocalization("relics")
-                .Add("title", "CLASSNAME")
-                .Add("description")
-                .Add("flavor")
+            [new RequiredLocalization("relics")
+                .Add("CLASSID.title", "CLASSNAME")
+                .Add("CLASSID.description")
+                .Add("CLASSID.flavor")]
         },
         {
             "MegaCrit.Sts2.Core.Models.AncientEventModel",
-            new RequiredLocalization("ancients")
-                .Add("title", "CLASSNAME")
-                .Add("epithet")
-                .Add("talk.firstVisitEver.0-0.ancient", "First time greeting.")
-                .Add("talk.ANY.0-0r.ancient", "Reusable generic greeting.")
+            [new RequiredLocalization("ancients")
+                .Add("CLASSID.title", "CLASSNAME")
+                .Add("CLASSID.epithet")
+                .Add("CLASSID.talk.firstVisitEver.0-0.ancient", "First time greeting.")
+                .Add("CLASSID.talk.ANY.0-0r.ancient", "Reusable generic greeting.")]
         }
     };
 
@@ -90,7 +96,8 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             "MegaCrit.Sts2.Core.Models.PowerModel",
             [
                 new("Title", "title"),
-                new("Description", "description")
+                new("Description", "description"),
+                new("SmartDescriptionLocKey", "smartDescription")
             ]
         }
     };
@@ -206,7 +213,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         {
             if (!namedTypeSymbol.ImplementsInterfaceOrBaseClass(entry.Key)) continue;
             var isCustomModel = namedTypeSymbol.ImplementsInterfaceOrBaseClass(CustomModelInterface);
-
+            
             List<string> ignoreKeys = [];
             if (OverrideIgnores.TryGetValue(entry.Key, out var overrideIgnores))
             {
@@ -218,7 +225,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
-
+            
             if (!isCustomModel)
             {
                 var customModelName = entry.Key;
@@ -232,38 +239,50 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             
             var fullName = namedTypeSymbol.FullName();
             var id = namedTypeSymbol.Name.Slugify();
-            if (isCustomModel) id = id.AddPrefix(fullName);
+            var prefix = fullName.GetPrefix();
+            if (isCustomModel) id = prefix + id;
             
-            foreach (var locEntry in entry.Value.RequiredKeys)
+            foreach (var requiredLoc in entry.Value)
             {
-                if (ignoreKeys.Contains(locEntry.Key)) continue;
+                missingKeys.Clear();
                 
-                var key = $"{entry.Value.Filename}.{id}.{locEntry.Key}";
-                if (_currentLocKeys.Contains(key)) continue;
+                foreach (var locEntry in requiredLoc.RequiredKeys)
+                {
+                    if (ignoreKeys.Contains(locEntry.Key)) continue;
+                    
+                    var key = ReplaceSpecial(locEntry.Key, id, prefix, namedTypeSymbol.Name);
+                    if (_currentLocKeys.Contains($"{requiredLoc.Filename}.{key}")) continue;
 
-                var result = locEntry.Value.Replace("CLASSNAME", namedTypeSymbol.Name);
+                    var result = ReplaceSpecial(locEntry.Value, id, prefix, namedTypeSymbol.Name);
+                    missingKeys.Add(key, result);
+                }
 
-                missingKeys.Add($"{id}.{locEntry.Key}", result);
+                if (missingKeys.Count == 0) continue;
+
+                var builder = ImmutableDictionary.CreateBuilder<string, string?>();
+                //For future, list all necessary languages. eg "eng/cards.json, zhs/cards.json"
+                builder.Add("LOCFILES", requiredLoc.Filename + ".json");
+                foreach (var missingKey in missingKeys)
+                {
+                    builder.Add(missingKey.Key, missingKey.Value);
+                }
+                
+                var diagnostic = Diagnostic.Create(Rule,
+                    namedTypeSymbol.Locations[0],
+                    builder.ToImmutable(),
+                    JoinKeys(missingKeys), fullName);
+                context.ReportDiagnostic(diagnostic);
             }
-
-            if (missingKeys.Count == 0) return;
-
-            var builder = ImmutableDictionary.CreateBuilder<string, string?>();
-            //For future, list all necessary languages. eg "eng/cards.json, zhs/cards.json"
-            builder.Add("LOCFILES", entry.Value.Filename + ".json");
-            foreach (var missingKey in missingKeys)
-            {
-                builder.Add(missingKey.Key, missingKey.Value);
-            }
-            
-            var diagnostic = Diagnostic.Create(Rule,
-                namedTypeSymbol.Locations[0],
-                builder.ToImmutable(),
-                JoinKeys(missingKeys), fullName);
-            context.ReportDiagnostic(diagnostic);
-
             return;
         }
+    }
+
+    private static string ReplaceSpecial(string orig, string id, string prefix, string name)
+    {
+        string result = orig.Replace("CLASSID", id);
+        result = result.Replace("PREFIX", id);
+        result = result.Replace("CLASSNAME", name);
+        return result;
     }
 
     private static string JoinKeys<T, U>(IDictionary<T, U> dict)

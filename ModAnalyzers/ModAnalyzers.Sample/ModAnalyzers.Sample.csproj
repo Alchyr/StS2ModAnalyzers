@@ -5,10 +5,25 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+
+    <!-- Windows -->
+    <PropertyGroup>
+        <SteamLibraryPath>C:/Program Files (x86)/Steam/steamapps</SteamLibraryPath>
+        <GodotPath>Z:\Projects\sts2\megadot\MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
+
+        <Sts2Path>$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <Sts2DataDir>$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
+    </PropertyGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\ModAnalyzers\ModAnalyzers.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-        <AdditionalFiles Include="localization/cards.json"/>
+        <AdditionalFiles Include="localization/*.json"/>
+        
+        
+        <Reference Include="sts2">
+            <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
     </ItemGroup>
-
 </Project>

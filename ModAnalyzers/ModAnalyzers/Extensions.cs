@@ -79,7 +79,7 @@ internal static class Extensions
             options: RegexOptions.Compiled);
 
     private static readonly Regex SpecialCharRegex =
-        new(pattern: "[^A-Z0-9_]",
+        new(pattern: "[^A-Za-z0-9_]",
             options: RegexOptions.Compiled);
 
     public static string Slugify(this string txt)
@@ -87,11 +87,6 @@ internal static class Extensions
         string str = CamelCaseRegex.Replace(txt.Trim(), "$1_$2");
         string input = WhitespaceRegex.Replace(str.ToUpper(), "_");
         return SpecialCharRegex.Replace(input, "");
-    }
-
-    public static string AddPrefix(this string name, string fullName)
-    {
-        return fullName.GetPrefix() + name;
     }
 
     public const char PREFIX_SPLIT_CHAR = '-';
