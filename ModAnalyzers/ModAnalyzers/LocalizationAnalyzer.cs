@@ -54,7 +54,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             new RequiredLocalization("ancients")
                 .Add("THE_ARCHITECT.talk.CLASSID.0-0r.char", "I am angry at the architect")
                 .Add("THE_ARCHITECT.talk.CLASSID.0-0r.next", "Continue")
-                .Add("THE_ARCHITECT.talk.CLASSID.0-0r.architect", "You die")
+                .Add("THE_ARCHITECT.talk.CLASSID.0-1r.architect", "You die")
                 .Add("THE_ARCHITECT.talk.CLASSID.0-attack", "BOTH")]
         },
         {
