@@ -95,9 +95,9 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
         {
             "MegaCrit.Sts2.Core.Models.PowerModel",
             [
-                new("Title", "title"),
-                new("Description", "description"),
-                new("SmartDescriptionLocKey", "smartDescription")
+                new("Title", "CLASSID.title"),
+                new("Description", "CLASSID.description"),
+                new("SmartDescriptionLocKey", "CLASSID.smartDescription")
             ]
         }
     };
