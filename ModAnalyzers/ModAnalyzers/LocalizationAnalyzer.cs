@@ -57,10 +57,19 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 .Add("SYMBOLID.banter.alive.endTurnPing", "Co-op hurry up end turn ping message")
                 .Add("SYMBOLID.banter.dead.endTurnPing", "..."),
             new RequiredLocalization("ancients")
-                .Add("THE_ARCHITECT.talk.SYMBOLID.0-0r.char", "I am angry at the architect")
-                .Add("THE_ARCHITECT.talk.SYMBOLID.0-0r.next", "Continue")
-                .Add("THE_ARCHITECT.talk.SYMBOLID.0-1r.ancient", "You die")
-                .Add("THE_ARCHITECT.talk.SYMBOLID.0-attack", "Both")]
+                .Add(new LocInfo(key =>
+                [
+                    new("THE_ARCHITECT.talk.SYMBOLID.0-0r.char", "I am angry at the architect"),
+                    new("THE_ARCHITECT.talk.SYMBOLID.0-0r.next", "Continue"),
+                    new("THE_ARCHITECT.talk.SYMBOLID.0-1r.ancient", "You die"),
+                    new("THE_ARCHITECT.talk.SYMBOLID.0-attack", "Both")
+                ], 
+                    "THE_ARCHITECT.talk.SYMBOLID.0-0r.char",
+                    "THE_ARCHITECT.talk.SYMBOLID.0-0r.ancient",
+                    "THE_ARCHITECT.talk.SYMBOLID.0-0.char",
+                    "THE_ARCHITECT.talk.SYMBOLID.0-0.ancient"
+                ))
+            ]
         },
         {
             "MegaCrit.Sts2.Core.Models.PotionModel",
@@ -88,12 +97,29 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 .Add("SYMBOLID.title", "SYMBOLNAME")
                 .Add("SYMBOLID.epithet")
                 .Add("SYMBOLID.talk.firstVisitEver.0-0.ancient", "First time greeting.")
-                .Add("SYMBOLID.talk.ANY.0-0r.ancient", "Reusable generic greeting.")]
+                .Add(["SYMBOLID.talk.ANY.0-0r.ancient",
+                    "SYMBOLID.talk.ANY.0-0r.char",
+                    "SYMBOLID.talk.ANY.0-0.ancient",
+                    "SYMBOLID.talk.ANY.0-0.char"
+                ], "Reusable generic greeting.")]
         },
         {
             "MegaCrit.Sts2.Core.Models.ActModel",
             [new RequiredLocalization("acts")
                 .Add("SYMBOLID.title", "SYMBOLNAME")
+            ]
+        },
+        {
+            "MegaCrit.Sts2.Core.Models.MonsterModel",
+            [new RequiredLocalization("monsters")
+                .Add("SYMBOLID.name", "SYMBOLNAME")
+            ]
+        },
+        {
+            "MegaCrit.Sts2.Core.Models.EncounterModel",
+            [new RequiredLocalization("encounters")
+                .Add("SYMBOLID.title", "SYMBOLNAME")
+                .Add("SYMBOLID.loss", "How did {character} die to [gold]{encounter}[/gold]?")
             ]
         }
     };
@@ -143,13 +169,46 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     class RequiredLocalization(string filename)
     {
         public readonly string Filename = filename;
-        public readonly Dictionary<string, string> RequiredKeys = [];
+        public readonly List<LocInfo> RequiredKeys = [];
 
         public RequiredLocalization Add(string key, string defaultValue = "")
         {
-            RequiredKeys.Add(key, defaultValue);
+            RequiredKeys.Add(new(defaultValue, key));
             return this;
         }
+        public RequiredLocalization Add(string[] keys, string defaultValue = "")
+        {
+            RequiredKeys.Add(new(defaultValue, keys));
+            return this;
+        }
+
+        public RequiredLocalization Add(LocInfo loc)
+        {
+            RequiredKeys.Add(loc);
+            return this;
+        }
+    }
+
+    class LocInfo
+    {
+        public LocInfo(Func<string, IEnumerable<Tuple<string, string>>> genLoc, params string[] locKeys)
+        {
+            LocFunc = genLoc;
+            LocKeys = locKeys;
+        }
+        public LocInfo(string defaultLoc, params string[] locKeys)
+        {
+            LocFunc = (key) => [new Tuple<string, string>(key, defaultLoc)];
+            LocKeys = locKeys;
+        }
+
+        /// <summary>
+        /// Func that receives generated localization key and returns arbitrary number of generated loc entries.
+        /// The generated loc entries still need text replacement.
+        /// </summary>
+        public Func<string, IEnumerable<Tuple<string, string>>> LocFunc { get; }
+        
+        public string[] LocKeys { get; }
     }
     
     private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.STS001Title),
@@ -181,12 +240,12 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(DiagnosticId, Title, MessageFormat, Category,
         DiagnosticSeverity.Error, isEnabledByDefault: true, description: Description);
     private static readonly DiagnosticDescriptor NoLoc = new(NoLocId, NoLocTitle, NoLocDescription, Category,
-        DiagnosticSeverity.Warning, isEnabledByDefault: true, customTags: "CompilationEnd");
+        DiagnosticSeverity.Error, isEnabledByDefault: true, customTags: "CompilationEnd");
     private static readonly DiagnosticDescriptor CustomModelRule = new(CustomModelRuleId, CustomModelTitle, CustomModelFormat, Category,
         DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CustomModelDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(Rule, NoLoc, CustomModelRule, LoggingDiagnostic.Fake);
+        [Rule, NoLoc, CustomModelRule, LoggingDiagnostic.Fake];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -238,9 +297,15 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             context.Compilation.GetTypeByMetadataName(CustomIdAttribute);
         
         context.RegisterSymbolAction(
-            context => CheckSymbol(context, customModelInterface, customLocInterface, idAttribute), 
+            analysisContext => CheckSymbol(analysisContext, customModelInterface, customLocInterface, idAttribute), 
             SymbolKind.NamedType);
         context.RegisterSymbolAction(CheckField, SymbolKind.Field);
+        /*context.RegisterSymbolAction(analysisContext => CheckMethod(analysisContext, customLocInterface, idAttribute),
+            SymbolKind.Method);
+        
+        context.RegisterOperationAction(null, OperationKind.MethodReference);
+        context.RegisterSyntaxNodeAction(syntaxContext => CheckMethod(syntaxContext, customLocInterface, idAttribute), SyntaxKind.InvocationExpression);*/
+
         context.RegisterCompilationEndAction(endContext =>
         {
             if (receivedJson) return;
@@ -277,6 +342,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
 
             ISet<string>? ignoreOnce = null; //Only ignored in first required loc;
                                           //secondary required loc is in a different file and so is not ignored.
+            
             if (namedTypeSymbol.ImplementsInterface(locProvider))
             {
                 ignoreOnce = FindAndGetLocalizationDeclaration(namedTypeSymbol, "SYMBOLID", context);
@@ -305,17 +371,11 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
             {
                 missingKeys.Clear();
                 
-                foreach (var locEntry in requiredLoc.RequiredKeys)
-                {
-                    if (ignoreKeys.Contains(locEntry.Key)) continue;
-                    if (ignoreOnce != null && (ignoreOnce.Count == 0 || ignoreOnce.Contains(locEntry.Key))) continue;
-                    
-                    var key = ReplaceSpecial(locEntry.Key, id, namedTypeSymbol.Name);
-                    if (_currentLocKeys.Contains($"{requiredLoc.Filename}.{key}")) continue;
-
-                    var result = ReplaceSpecial(locEntry.Value, id, namedTypeSymbol.Name);
-                    missingKeys.Add(key, result);
-                }
+                var once = ignoreOnce;
+                FindMissingKeys(missingKeys, requiredLoc, id, namedTypeSymbol.Name, 
+                    (locKey) => ignoreKeys.Contains(locKey) ||
+                                (once != null && (once.Count == 0 || once.Contains(locKey)))
+                    );
 
                 ignoreOnce = null;
 
@@ -336,6 +396,25 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(diagnostic);
             }
             return;
+        }
+    }
+
+    //TODO - detect used methods and add required loc
+    //option generation for events, selection prompt for cards
+    private void CheckMethod(SyntaxNodeAnalysisContext context, INamedTypeSymbol? locProvider, INamedTypeSymbol? idAttribute)
+    {
+        if (_currentLocKeys == null) return;
+        if (context.Node is not InvocationExpressionSyntax invocation) return;
+
+        var identifierName = invocation.FindChild<IdentifierNameSyntax>();
+        if (identifierName == null) return;
+        
+        switch (identifierName.Identifier.Text)
+        {
+            case "LockedOption":
+                break;
+            case "Option":
+                break;
         }
     }
 
@@ -465,15 +544,8 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                 foreach (var requiredLoc in entry.Value)
                 {
                     missingKeys.Clear();
-            
-                    foreach (var locEntry in requiredLoc.RequiredKeys)
-                    {
-                        var key = ReplaceSpecial(locEntry.Key, id, name);
-                        if (_currentLocKeys.Contains($"{requiredLoc.Filename}.{key}")) continue;
-
-                        var result = ReplaceSpecial(locEntry.Value, id, name);
-                        missingKeys.Add(key, result);
-                    }
+                    
+                    FindMissingKeys(missingKeys, requiredLoc, id, name);
 
                     if (missingKeys.Count == 0) continue;
 
@@ -491,6 +563,44 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
                         JoinKeys(missingKeys), name);
                     context.ReportDiagnostic(diagnostic);
                 }
+            }
+        }
+    }
+
+    //Finds all localization keys that don't exist in current loc table and add them to passed missingKeys dictionary
+    private void FindMissingKeys(Dictionary<string, string> missingKeys, RequiredLocalization loc,
+        string id, string name,
+        Predicate<string>? skipCheck = null)
+    {
+        if (_currentLocKeys == null) return;
+        foreach (var locEntry in loc.RequiredKeys)
+        {
+            bool locFine = false;
+            string? defaultKey = null;
+                    
+            foreach (var locDef in locEntry.LocKeys)
+            {
+                if (skipCheck != null && skipCheck(locDef))
+                {
+                    locFine = true;
+                    break;
+                }
+                
+                var key = ReplaceSpecial(locDef, id, name);
+                defaultKey ??= key;
+                
+                if (_currentLocKeys.Contains($"{loc.Filename}.{key}"))
+                {
+                    locFine = true;
+                    break;
+                }
+            }
+
+            if (locFine || defaultKey == null) continue;
+
+            foreach (var defaultLoc in locEntry.LocFunc(defaultKey))
+            {
+                missingKeys.Add(defaultLoc.Item1, ReplaceSpecial(defaultLoc.Item2, id, name));
             }
         }
     }

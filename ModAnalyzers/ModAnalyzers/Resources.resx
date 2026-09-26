@@ -33,7 +33,7 @@
         <value>Localization {0} not found for symbol '{1}'</value>
     </data>
     <data name="STS001CodeFixTitle" xml:space="preserve">
-        <value>Generate localization that must be copied to '{0}'</value>
+        <value>Generate localization to copy to '{0}'</value>
     </data>
     <data name="STS002Title" xml:space="preserve">
         <value>Missing localization files</value>

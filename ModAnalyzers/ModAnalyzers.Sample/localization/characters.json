@@ -11,5 +11,6 @@
   "MODANALYZERS-GUY.pronounObject": "him/her/it",
   "MODANALYZERS-GUY.pronounPossessive": "his/hers/its",
   "MODANALYZERS-GUY.pronounSubject": "he/she/it",
-  "MODANALYZERS-GUY.title": "The Guy"
+  "MODANALYZERS-GUY.title": "The Guy",
+  "MODANALYZERS-GUY.titleObject": "The Guy"
 }

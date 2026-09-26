@@ -9,8 +9,8 @@ public class EnumTest
     public static CardKeyword MyKeyword;
     
     [CustomEnum]
-    public CardKeyword Wrong;
+    public CardKeyword Wrong; //not defined as a CustomEnum properly
 
     [CustomEnum] 
-    public static PileType CustomPileType;
+    public static PileType CustomPileType; //Doesn't need loc
 }

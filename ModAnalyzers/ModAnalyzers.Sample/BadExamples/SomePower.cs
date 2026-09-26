@@ -1,7 +1,7 @@
 ﻿using BaseLib.Abstracts;
 using MegaCrit.Sts2.Core.Entities.Powers;
 
-namespace ModAnalyzers.Sample;
+namespace ModAnalyzers.Sample.BadExamples;
 
 public class SomePower : InBetweenPower, ICustomModel
 {
