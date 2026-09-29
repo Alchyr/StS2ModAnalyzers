@@ -600,7 +600,7 @@ public class LocalizationAnalyzer : DiagnosticAnalyzer
 
             foreach (var defaultLoc in locEntry.LocFunc(defaultKey))
             {
-                missingKeys.Add(defaultLoc.Item1, ReplaceSpecial(defaultLoc.Item2, id, name));
+                missingKeys.Add(ReplaceSpecial(defaultLoc.Item1, id, name), ReplaceSpecial(defaultLoc.Item2, id, name));
             }
         }
     }
